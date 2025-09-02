@@ -1,26 +1,48 @@
 #!/usr/bin/env python
-from random import randint
 
 from crewai.flow import Flow, listen, start, router
-from pydantic import BaseModel
-from typing import Literal, List
+from pydantic import BaseModel, Field
+from typing import Literal, List, Optional
 from datetime import datetime
-from crewai import LLM
+from crewai import LLM, Agent
 import json
 
-from crewai_flow_workshop1.crews.poem_crew.poem_crew import PoemCrew
+from crewai_flow_workshop1.tools.deep_research_paper import DeepResearchPaper
 
 class Message(BaseModel):
     role: Literal["user", "assistant"] = "user" 
     content: str
     timestamp: datetime = datetime.now()
 
-class FlowState(BaseModel):
-    user_message: str = "Hi! How are you?"
-    message_history: List[Message] = []
-
 class RouterIntent(BaseModel):
-    intent: Literal["research", "conversation"]
+    user_intent: Literal["research", "conversation"]
+    research_query: Optional[str] = None
+    reasoning: str
+
+class Source(BaseModel):
+    url: str
+    title: str
+    relevant_content: str
+
+class SearchResult(BaseModel):
+    research_summary: str = Field(
+        description="A comprehensive research summary that combines all found sources with inline URL citations. "
+        "Each piece of information must be followed by its source URL in parentheses format: (URL). "
+        "The summary should be organized by topics/themes and present a cohesive narrative."
+    )
+    sources_list: List[Source] = Field(
+        description="Complete list of all sources used in the research summary for reference."
+    )
+
+class FlowState(BaseModel):
+    user_message: str = "help me researching on the latest trends in ai"
+    message_history: List[Message] = []
+    research_query: Optional[str] = None
+    user_intent: Optional[Literal["research", "conversation"]] = None
+    search_result: Optional[SearchResult] = None
+
+
+
 
 # @persist()
 class PoemFlow(Flow[FlowState]):
@@ -37,84 +59,187 @@ class PoemFlow(Flow[FlowState]):
         if self.state.user_message:
             self.add_message("user", self.state.user_message)
 
+        print("history", self.state.message_history)
+
     @router(starting_flow)
     def routing_intent(self):
 
         llm = LLM(model="gpt-4.1-mini", 
-            temperature=0.3,
+            temperature=0.1,
             response_format=RouterIntent)
 
-        response = llm.call(
-            "Analyze the following messages and return the intent of the message, that can either be research or conversation."
-            "use research when the query of the user is a follow up questions on a research that has been done already in the "
-            "conversation history or a new query that can be reasearched on and passed to the deep research crew."
-            f"User message:  {self.state.user_message}"
-            f"Conversation history: {self.state.message_history}"
-        )
+        prompt = f"""
+        === TASK ===
+        You are an intelligent router that determines user intent and generates research queries when appropriate.
 
-        print(response)
+        === INSTRUCTIONS ===
+        Analyze the user's message and conversation history to determine the intent. Follow these specific rules:
 
-        # Response is already a dict with the intent key
+        **RESEARCH Intent Criteria:**
+        - User asks for factual information, studies, or analysis that requires external research
+        - User asks follow-up questions about previous research topics mentioned in conversation history
+        - User requests investigation into scientific papers, market trends, or data analysis
+        - User wants in-depth exploration of complex topics that benefit from comprehensive research
+
+        **CONVERSATION Intent Criteria:**
+        - General greetings, casual conversation, or personal questions
+        - Simple clarifications that don't require external research
+        - Requests for explanations about the system's capabilities
+        - Any interaction that is purely conversational in nature
+
+        === INPUT DATA ===
+        **Current User Message:**
+        {self.state.user_message}
+
+        **Recent Conversation History:**
+        {self.state.message_history}
+
+        === OUTPUT REQUIREMENTS ===
+        1. **user_intent**: Must be either "research" or "conversation"
+        2. **research_query**: 
+        - If intent is "research": Generate a comprehensive, specific research query that incorporates context from conversation history and current message
+        - If intent is "conversation": Set to null
+        3. **reasoning**: Provide clear reasoning for your classification decision
+
+        === EXAMPLES ===
+        **Research Example:**
+        User: "What are the latest studies on climate change impacts?"
+        → user_intent: "research", research_query: "latest scientific studies climate change environmental impacts 2024", reasoning: "User requests current research information requiring external sources"
+
+        **Conversation Example:**
+        User: "Hello, how are you today?"
+        → user_intent: "conversation", research_query: null, reasoning: "General greeting requiring conversational response, no research needed"
+
+        **Follow-up Research Example:**
+        Previous context: Discussion about AI ethics
+        User: "Can you find more studies about bias in machine learning?"
+        → user_intent: "research", research_query: "bias machine learning algorithms studies fairness AI ethics research", reasoning: "Follow-up question on previous AI ethics discussion requiring additional research"
+
+        === CRITICAL REQUIREMENTS ===
+        - Be decisive and clear in your classification
+        - For research queries, make them specific and actionable for a research agent
+        - Consider conversation context when generating research queries
+        - Always provide reasoning for your decision"""
+
+        response = llm.call(prompt)
+
+        print(f"Router Decision: {response}")
+
         if isinstance(response, str):
-            response = json.loads(response)
-        
-        return response["intent"]
+            response_data = json.loads(response)
+            self.state.research_query = response_data.get("research_query")
+            self.state.user_intent = response_data.get("user_intent")
+            return response_data.get("user_intent")
 
     @listen("conversation")
     def follow_up_conversation(self):
 
-        llm = LLM(model="gpt-4.1-mini", temperature=0.3)
+        llm = LLM(model="gpt-4.1-mini", temperature=0.7)
 
-        response = llm.call(
-            "As expert conversation handler, answer the user's message based on the conversation history."
-            "Your task is to guide the user through the conversation based on the conversation history and the user's message "
-            "making sure the scope is clear: guide the user to perform a deep research on scientific papers and pass it to the deep research crew."
-            "or guide the user to perform a follow up conversation based on the conversation history and the user's message."
-            f"User message:  {self.state.user_message}"
-            f"Conversation history: {self.state.message_history}"
-        )
+        prompt = f"""
+        === ROLE ===
+        You are a helpful and knowledgeable conversation assistant specialized in guiding users toward valuable research opportunities when appropriate.
 
-        print(response)
+        === TASK ===
+        Provide a natural, helpful response to the user's message while being mindful of conversation flow and context.
+
+        === CONTEXT ===
+        **Current User Message:**
+        {self.state.user_message}
+
+        **Recent Conversation History:**
+        {self.state.message_history}
+
+        === INSTRUCTIONS ===
+        1. **Respond naturally**: Address the user's message directly and conversationally
+        2. **Be helpful**: Provide useful information or assistance based on their request
+        3. **Guide appropriately**: If the conversation naturally leads toward topics that would benefit from research, gently suggest research options
+        4. **Maintain context**: Reference previous conversation points when relevant
+        5. **Stay engaging**: Keep the conversation flowing and be personable
+
+        === GUIDANCE OPPORTUNITIES ===
+        When appropriate, you may suggest research on:
+        - Scientific papers and studies
+        - Market trends and analysis  
+        - Technical deep-dives
+        - Data-driven insights
+        - Current events and developments
+
+        === RESPONSE STYLE ===
+        - Be conversational and natural
+        - Show understanding of the user's needs
+        - Provide actionable next steps when relevant
+        - Keep responses concise but comprehensive
+        - Be encouraging and supportive
+
+        Respond to the user's message now:"""
+
+        response = llm.call(prompt)
+        
+        # Add the conversation response to history
+        self.add_message("assistant", response)
+        
+        print(f"Conversation response: {response}")
+        return response
 
     @listen("research")
     def handle_research(self):
-        print("Research intent detected - starting deep research process")
-        # TODO: Integrate with deep research crew
-        # For now, just acknowledge the research request
-        self.add_message("assistant", "I understand you want to do research. This will be handled by the research crew.")
+        print(f"Starting research with query: {self.state.research_query}")
+        
+        # Create an Agent for deep research
+        analyst = Agent(
+            role="Deep Research Specialist",
+            goal="Conduct comprehensive research on specific queries, returning a summary response and detailed sources data",
+            backstory="You are an expert researcher with access to academic databases and research sources. "
+            "You excel at finding relevant scholarly papers, studies, and research findings, "
+            "synthesizing multiple academic sources, and providing comprehensive insights from credible research.",
+            tools=[DeepResearchPaper()],
+            verbose=True,
+        )
+        
+        # Execute the research
+        task = f"""
+RESEARCH TASK: {self.state.research_query}
 
-    # @listen(generate_sentence_count)
-    # def generate_poem(self):
-    #     print("Answering user message")
-        
-    #     # Generate a sample response (you can replace this with actual CrewAI logic)
-    #     assistant_response = "I'm doing well, thank you! I'd be happy to write you a poem. Here's a short one about the beauty of conversation."
-        
-    #     new_message = Message(role="assistant", content=assistant_response)
-    #     self.state.message_history.append(new_message)
-        
-    #     # Display the current message history
-    #     print(self.state.model_dump())
-        
-    #     return 'Finished'
-        # Example of using extend_message_history with multiple messages
-        # additional_messages = [
-        #     Message(role="user", content="That's a nice poem!"),
-        #     Message(role="assistant", content="Thank you! I'm glad you enjoyed it.")
-        # ]
-        # self.extend_message_history(additional_messages)
-        
-        # return self.state.model_dump()
+INSTRUCTIONS:
+You must research and provide comprehensive information about the query above. Follow these EXACT requirements:
 
-        # Uncomment for actual CrewAI integration:
-        # result = (
-        #     PoemCrew()
-        #     .crew()
-        #     .kickoff(inputs={"sentence_count": self.state.sentence_count})
-        # )
-        # assistant_response = result.raw
-        # self.add_message("assistant", assistant_response)
-        # return assistant_response
+1. RESEARCH FORMAT REQUIREMENTS:
+   - Use your Deep Research Paper Search tool to find relevant academic papers and research sources
+   - Find at least 8-10 high-quality, recent sources when possible
+   - Focus on scholarly articles, research papers, and authoritative sources
+
+2. OUTPUT FORMAT REQUIREMENTS:
+   - research_summary: Write a comprehensive summary that combines ALL found sources into a single, cohesive narrative
+   - Each piece of information MUST be immediately followed by its source URL in parentheses: (https://example.com/source)
+   - Organize the summary by topics/themes, not by individual papers
+   - Do NOT create separate summaries for each paper - integrate all findings into one flowing text
+   - sources_list: Include ALL sources used, with url, title, and relevant_content for each
+
+3. CITATION FORMAT (MANDATORY):
+   - Every fact, finding, or piece of information must be cited with its URL
+   - Format: "According to recent research, AI adoption is increasing rapidly (https://example.com/source1), while challenges remain in implementation (https://example.com/source2)."
+   - Never present information without its corresponding URL citation
+
+4. CONTENT REQUIREMENTS:
+   - Combine related findings from multiple sources into coherent themes
+   - Present a comprehensive view of the research topic
+   - Include current trends, key findings, and important insights
+   - Maintain academic tone while ensuring readability
+
+REMEMBER: Your goal is to create ONE comprehensive summary that weaves together all research findings with proper URL citations, not individual paper summaries."""
+    
+
+        research_result = analyst.kickoff(task, response_format=SearchResult)
+
+        self.state.search_result = research_result.pydantic
+
+        # Add the research result to conversation history
+        self.add_message("assistant", self.state.search_result.research_summary)
+        
+        print(f"Research completed: {self.state.search_result.research_summary}")
+        
+        return self.state.model_dump()
 
 
 def kickoff():

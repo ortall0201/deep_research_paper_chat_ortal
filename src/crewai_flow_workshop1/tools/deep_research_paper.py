@@ -14,10 +14,6 @@ class DeepResearchPaperInput(BaseModel):
         ...,
         description="Research query to search for academic papers (e.g., 'machine learning transformers', 'agentic ai systems')",
     )
-    limit: Optional[int] = Field(
-        default=10,
-        description="Maximum number of research papers to retrieve (default: 10, max: 50)",
-    )
     max_age: Optional[int] = Field(
         default=172800000,
         description="Maximum age of cached content in milliseconds (default: 48 hours)",
@@ -28,28 +24,27 @@ class DeepResearchPaper(BaseTool):
     name: str = "Deep Research Paper Search"
     description: str = (
         "Searches academic and research databases (arXiv, Nature, IEEE, PubMed, etc.) for scholarly papers "
-        "related to your query. Returns paper titles, URLs, descriptions, and full markdown content when available. "
+        "related to your query. Returns exactly 5 research papers with titles, URLs, descriptions, and full markdown content when available. "
         "Perfect for literature reviews, research validation, and finding cutting-edge academic work."
     )
     args_schema: Type[BaseModel] = DeepResearchPaperInput
 
     def _run(
-        self, query: str, limit: Optional[int] = 10, max_age: Optional[int] = 172800000
+        self, query: str, max_age: Optional[int] = 172800000
     ) -> str:
         """
         Search for academic papers using Firecrawl's research category search.
 
         Args:
             query: The research topic to search for
-            limit: Maximum number of results to return (1-50)
             max_age: Maximum age of cached content in milliseconds
 
         Returns:
-            Formatted string containing research paper results with titles, URLs, and content
+            Formatted string containing exactly 5 research paper results with titles, URLs, and content
         """
         try:
             # Validate and sanitize inputs
-            limit = max(1, min(limit or 10, 50))  # Ensure limit is between 1-50
+            limit = 5  # Fixed limit of 5 research papers
             max_age = max_age or 172800000
 
             url = "https://api.firecrawl.dev/v2/search"
