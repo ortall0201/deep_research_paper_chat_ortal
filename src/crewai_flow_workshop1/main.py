@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from crewai.flow import Flow, listen, start, router
+from crewai.flow import Flow, listen, start, router, persist
 from pydantic import BaseModel, Field
 from typing import Literal, List, Optional
 from datetime import datetime
@@ -12,7 +12,7 @@ from crewai_flow_workshop1.tools.deep_research_paper import DeepResearchPaper
 class Message(BaseModel):
     role: Literal["user", "assistant"] = "user" 
     content: str
-    timestamp: datetime = datetime.now()
+    timestamp: str = Field(default_factory=lambda: datetime.now().isoformat())
 
 class RouterIntent(BaseModel):
     user_intent: Literal["research", "conversation"]
@@ -41,11 +41,8 @@ class FlowState(BaseModel):
     user_intent: Optional[Literal["research", "conversation"]] = None
     search_result: Optional[SearchResult] = None
 
-
-
-
-# @persist()
-class PoemFlow(Flow[FlowState]):
+@persist()
+class DeepResearchFlow(Flow[FlowState]):
 
     def add_message(self, role: str, content: str):
         """Add a message to the message history"""
@@ -237,19 +234,17 @@ REMEMBER: Your goal is to create ONE comprehensive summary that weaves together 
         # Add the research result to conversation history
         self.add_message("assistant", self.state.search_result.research_summary)
         
-        print(f"Research completed: {self.state.search_result.research_summary}")
-        
         return self.state.model_dump()
 
 
 def kickoff():
-    poem_flow = PoemFlow(tracing=True)
-    poem_flow.kickoff()
+    research_flow = DeepResearchFlow(tracing=True)
+    research_flow.kickoff()
 
 
 def plot():
-    poem_flow = PoemFlow()
-    poem_flow.plot()
+    research_flow = DeepResearchFlow()
+    research_flow.plot()
 
 
 if __name__ == "__main__":
