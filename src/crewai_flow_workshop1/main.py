@@ -7,7 +7,8 @@ from datetime import datetime
 from crewai import LLM, Agent
 import json
 
-from crewai_flow_workshop1.tools.deep_research_paper import DeepResearchPaper
+# from crewai_flow_workshop1.tools.deep_research_paper import DeepResearchPaper # Using the local tool
+from deep_research_paper_tool.tool import DeepResearchPaper # Importing tool from crewai tool repository
 
 class Message(BaseModel):
     role: Literal["user", "assistant"] = "user" 
@@ -196,37 +197,19 @@ class DeepResearchFlow(Flow[FlowState]):
         
         # Execute the research
         task = f"""
-RESEARCH TASK: {self.state.research_query}
-
-INSTRUCTIONS:
-You must research and provide comprehensive information about the query above. Follow these EXACT requirements:
-
-1. RESEARCH FORMAT REQUIREMENTS:
-   - Use your Deep Research Paper Search tool to find relevant academic papers and research sources
-   - Find at least 8-10 high-quality, recent sources when possible
-   - Focus on scholarly articles, research papers, and authoritative sources
-
-2. OUTPUT FORMAT REQUIREMENTS:
-   - research_summary: Write a comprehensive summary that combines ALL found sources into a single, cohesive narrative
-   - Each piece of information MUST be immediately followed by its source URL in parentheses: (https://example.com/source)
-   - Organize the summary by topics/themes, not by individual papers
-   - Do NOT create separate summaries for each paper - integrate all findings into one flowing text
-   - sources_list: Include ALL sources used, with url, title, and relevant_content for each
-
-3. CITATION FORMAT (MANDATORY):
-   - Every fact, finding, or piece of information must be cited with its URL
-   - Format: "According to recent research, AI adoption is increasing rapidly (https://example.com/source1), while challenges remain in implementation (https://example.com/source2)."
-   - Never present information without its corresponding URL citation
-
-4. CONTENT REQUIREMENTS:
-   - Combine related findings from multiple sources into coherent themes
-   - Present a comprehensive view of the research topic
-   - Include current trends, key findings, and important insights
-   - Maintain academic tone while ensuring readability
-
-REMEMBER: Your goal is to create ONE comprehensive summary that weaves together all research findings with proper URL citations, not individual paper summaries."""
+        You must research and provide comprehensive information about the query:{self.state.research_query}
+        
+        OUTPUT FORMAT REQUIREMENTS:
+        - Write a comprehensive summary that combines ALL found sources into a single, cohesive narrative
+        - Each piece of information MUST be immediately followed by its source URL in parentheses: (https://example.com/source)
+        - sources_list: Include ALL sources used, with url, title, and relevant_content for each. Every fact, finding, or piece of information must be cited with its URL.
+        
+        <example>
+        Example:
+        "According to recent research, AI adoption is increasing rapidly (https://example.com/source1), while challenges remain in implementation (https://example.com/source2)."
+        </example>
+        """
     
-
         research_result = analyst.kickoff(task, response_format=SearchResult)
 
         self.state.search_result = research_result.pydantic
