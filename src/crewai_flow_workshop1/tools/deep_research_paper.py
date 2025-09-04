@@ -25,7 +25,7 @@ class DeepResearchPaper(BaseTool):
     )
     args_schema: Type[BaseModel] = DeepResearchPaperInput
 
-    def _run(self, query: str) -> str:
+    def _run(self, query: str = None, **kwargs) -> str:
         """
         Search for academic papers using Firecrawl's research category search.
 
@@ -36,6 +36,17 @@ class DeepResearchPaper(BaseTool):
             JSON response containing exactly 5 research paper results from the last year
         """
         try:
+            # Handle different input formats the agent might pass
+            if query is None and kwargs:
+                # Try to extract query from kwargs
+                if 'description' in kwargs:
+                    query = kwargs['description']
+                elif len(kwargs) == 1:
+                    query = list(kwargs.values())[0]
+            
+            if not query:
+                return "Error: No search query provided. Please provide a research query string."
+                
             # Fixed limit of 5 research papers
             limit = 5
 
