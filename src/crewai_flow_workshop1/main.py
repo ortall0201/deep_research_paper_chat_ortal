@@ -199,17 +199,17 @@ class DeepResearchFlow(Flow[FlowState]):
         
         # Execute the research
         task = f"""
-        You must research and provide comprehensive information about the query:{self.state.research_query}
+        Use the Deep Research Paper Search tool to research the following query: {self.state.research_query}
         
-        OUTPUT FORMAT REQUIREMENTS:
-        - Write a comprehensive summary that combines ALL found sources into a single, cohesive narrative
+        Call the tool with exactly this query parameter: {self.state.research_query}
+        
+        After getting the research results, provide a comprehensive summary that:
+        - Combines ALL found sources into a single, cohesive narrative
         - Each piece of information MUST be immediately followed by its source URL in parentheses: (https://example.com/source)
-        - sources_list: Include ALL sources used, with url, title, and relevant_content for each. Every fact, finding, or piece of information must be cited with its URL.
+        - Include ALL sources used with url, title, and relevant_content for each
         
-        <example>
-        Example:
+        Example format:
         "According to recent research, AI adoption is increasing rapidly (https://example.com/source1), while challenges remain in implementation (https://example.com/source2)."
-        </example>
         """
     
         research_result = analyst.kickoff(task, response_format=SearchResult)
