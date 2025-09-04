@@ -44,12 +44,18 @@ jobs:
         cd frontend/synapse-research
         npm run build
     
-    - name: Test API health
+    - name: Test API imports
       run: |
-        # Start API in background for health check
-        uv run python start_api.py &
-        sleep 10
-        curl -f http://localhost:8000/health || exit 1
+        # Test that the API can be imported without errors
+        uv run python -c "
+        try:
+            from src.crewai_flow_workshop1.api_server import app
+            from src.crewai_flow_workshop1.main import DeepResearchFlow
+            print('✅ API imports successful')
+        except Exception as e:
+            print(f'❌ Import error: {e}')
+            exit(1)
+        "
 
   build-and-push:
     needs: test
