@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Optional, Type
+from typing import Type
 
 import requests
 from crewai.tools import BaseTool
@@ -14,38 +14,30 @@ class DeepResearchPaperInput(BaseModel):
         ...,
         description="Research query to search for academic papers (e.g., 'machine learning transformers', 'agentic ai systems')",
     )
-    max_age: Optional[int] = Field(
-        default=172800000,
-        description="Maximum age of cached content in milliseconds (default: 48 hours)",
-    )
 
 
 class DeepResearchPaper(BaseTool):
     name: str = "Deep Research Paper Search"
     description: str = (
         "Searches academic and research databases (arXiv, Nature, IEEE, PubMed, etc.) for scholarly papers "
-        "related to your query. Returns exactly 5 research papers with titles, URLs, descriptions, and full markdown content when available. "
+        "related to your query. Returns exactly 5 research papers from the last year with titles, URLs, and descriptions. "
         "Perfect for literature reviews, research validation, and finding cutting-edge academic work."
     )
     args_schema: Type[BaseModel] = DeepResearchPaperInput
 
-    def _run(
-        self, query: str, max_age: Optional[int] = 172800000
-    ) -> str:
+    def _run(self, query: str) -> str:
         """
         Search for academic papers using Firecrawl's research category search.
 
         Args:
             query: The research topic to search for
-            max_age: Maximum age of cached content in milliseconds
 
         Returns:
-            Formatted string containing exactly 5 research paper results with titles, URLs, and content
+            JSON response containing exactly 5 research paper results from the last year
         """
         try:
-            # Validate and sanitize inputs
-            limit = 5  # Fixed limit of 5 research papers
-            max_age = max_age or 172800000
+            # Fixed limit of 5 research papers
+            limit = 5
 
             url = "https://api.firecrawl.dev/v2/search"
 
@@ -53,13 +45,8 @@ class DeepResearchPaper(BaseTool):
                 "query": query,
                 "sources": ["web"],
                 "categories": ["research"],
+                "tbs": "qdr:y",  # Search within last year
                 "limit": limit,
-                "scrapeOptions": {
-                    "onlyMainContent": True,
-                    "maxAge": max_age,
-                    "parsers": [],
-                    "formats": ["markdown"],
-                },
             }
 
             # Get API key from environment variable
