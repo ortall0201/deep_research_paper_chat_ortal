@@ -1,5 +1,5 @@
 # Multi-stage Dockerfile for CrewAI Research Application
-FROM node:18-alpine as frontend-builder
+FROM node:18-alpine AS frontend-builder
 
 # Build frontend
 WORKDIR /app/frontend
@@ -22,16 +22,13 @@ RUN pip install uv
 # Set working directory
 WORKDIR /app
 
-# Copy Python dependencies
+# Copy Python dependencies and source code
 COPY pyproject.toml ./
-COPY uv.lock* ./
-
-# Install Python dependencies
-RUN uv sync --no-dev
-
-# Copy application code
 COPY src/ ./src/
 COPY start_api.py ./
+
+# Install Python dependencies directly from pyproject.toml
+RUN uv pip install --system -e .
 
 # Copy built frontend
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
