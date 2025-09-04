@@ -33,22 +33,15 @@ RUN uv pip install --system -e .
 # Copy built frontend
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
-# Create a simple static file server for frontend
+# Create startup script that serves both frontend and backend on port 8000
 RUN echo '#!/bin/bash\n\
-# Start backend API\n\
-uv run python start_api.py &\n\
-\n\
-# Start simple HTTP server for frontend on port 3000\n\
-cd frontend/dist && python -m http.server 3000 &\n\
-\n\
-# Wait for any process to exit\n\
-wait -n\n\
-\n\
-# Exit with status of process that exited first\n\
-exit $?' > /app/start.sh && chmod +x /app/start.sh
+# Start the FastAPI server which will also serve the frontend\n\
+cd /app\n\
+uv run uvicorn src.crewai_flow_workshop1.api_server:app --host 0.0.0.0 --port ${PORT:-8000}\n\
+' > /app/start.sh && chmod +x /app/start.sh
 
-# Expose ports
-EXPOSE 8000 3000
+# Expose port 8000 (AWS App Runner will map this)
+EXPOSE 8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \

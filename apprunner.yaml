@@ -1,0 +1,20 @@
+version: 1.0
+runtime: docker
+build:
+  commands:
+    build:
+      # Use the pre-built Docker image from GitHub Container Registry
+      - echo "Using pre-built Docker image from GitHub Actions"
+run:
+  runtime-version: latest
+  command: /app/start.sh
+  network:
+    port: 8000
+    env: PORT
+  env:
+    - name: PORT
+      value: "8000"
+    - name: API_HOST
+      value: "0.0.0.0"
+    - name: ENVIRONMENT
+      value: "production"

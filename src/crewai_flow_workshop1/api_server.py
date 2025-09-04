@@ -2,11 +2,15 @@
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from typing import List, Optional, Literal, Dict, Any
 from datetime import datetime
 import uuid
 import asyncio
+import os
+from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 
 from crewai_flow_workshop1.main import DeepResearchFlow, RouterIntent, SearchResult, Message as CrewAIMessage
@@ -331,6 +335,30 @@ async def add_message(session_id: str, message: Message) -> Message:
 async def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "timestamp": datetime.now()}
+
+# Mount static files for frontend (production deployment)
+static_dir = Path(__file__).parent.parent.parent / "frontend" / "dist"
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=static_dir / "assets"), name="static")
+    
+    @app.get("/{full_path:path}")
+    async def serve_frontend(full_path: str):
+        """Serve frontend files, fallback to index.html for SPA routing"""
+        # API routes should be handled before this
+        if full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="API endpoint not found")
+        
+        # Try to serve the requested file
+        file_path = static_dir / full_path
+        if file_path.is_file():
+            return FileResponse(file_path)
+        
+        # For SPA routing, always serve index.html for unknown routes
+        index_path = static_dir / "index.html"
+        if index_path.exists():
+            return FileResponse(index_path)
+        
+        raise HTTPException(status_code=404, detail="Frontend not found")
 
 if __name__ == "__main__":
     import uvicorn
