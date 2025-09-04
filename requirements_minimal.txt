@@ -1,0 +1,5 @@
+crewai[tools]
+firecrawl
+pydantic
+requests
+python-dotenv
