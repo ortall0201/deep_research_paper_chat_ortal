@@ -71,26 +71,75 @@ FIRECRAWL_API_KEY=your_firecrawl_api_key_here
 
 ### Flow Structure
 
-The main flow (`PoemFlow`) orchestrates three key components:
+The main flow (`DeepResearchFlow`) uses CrewAI's `@persist()` decorator and orchestrates these key components:
 
-1. **Intent Router** (`routing_intent`)
-   - Analyzes user messages using GPT-4 mini
-   - Classifies intent as "research" or "conversation"
-   - Generates optimized research queries when needed
+#### Core Data Models
+- **`Message`**: Tracks role, content, and timestamp for conversation history
+- **`RouterIntent`**: Structures LLM routing decisions with intent classification and research query generation
+- **`Source`**: Represents research sources with URL, title, and relevant content
+- **`SearchResult`**: Contains comprehensive research summary with inline citations and source list
+- **`FlowState`**: Maintains user message, conversation history, research queries, and results
 
-2. **Research Handler** (`handle_research`)
-   - Creates specialized research agent
-   - Uses `DeepResearchPaper` tool for academic searches
-   - Returns structured results with citations
+#### Flow Methods
 
-3. **Conversation Handler** (`follow_up_conversation`)
-   - Provides natural conversational responses
-   - Maintains context from message history
-   - Guides users toward research opportunities when appropriate
+1. **Starting Flow** (`@start() starting_flow`)
+   - Initializes the flow with user message
+   - Adds user message to conversation history
+   - Triggers the routing process
+
+2. **Intent Router** (`@router(starting_flow) routing_intent`)
+   - Uses GPT-4.1 mini with `response_format=RouterIntent` for structured output
+   - Analyzes user messages and conversation history
+   - Classifies intent as "research" or "conversation" using detailed criteria
+   - Generates optimized research queries when research intent is detected
+   - Returns routing decision for flow orchestration
+
+3. **Research Handler** (`@listen("research") handle_research`)
+   - Creates specialized `Deep Research Specialist` agent
+   - Uses `DeepResearchPaper()` tool for academic database searches
+   - Executes research with `response_format=SearchResult` for structured output
+   - Requires comprehensive summaries with inline URL citations: `(https://example.com/source)`
+   - Returns complete research results with sources list
+
+4. **Conversation Handler** (`@listen("conversation") follow_up_conversation`)
+   - Uses GPT-4.1 mini with higher temperature (0.7) for natural responses
+   - Maintains conversation context and flow
+   - Provides helpful responses while guiding toward research opportunities
+   - Adds assistant responses to message history
 
 ### Custom Tools
 
 - **DeepResearchPaper**: Searches academic databases and returns exactly 5 research papers with full content and proper citations
+
+## Technical Implementation Details
+
+### Key Implementation Features
+
+#### Structured LLM Responses
+- **RouterIntent**: Uses Pydantic models for structured LLM responses with `user_intent`, `research_query`, and `reasoning` fields
+- **SearchResult**: Enforces structured research output with `research_summary` and `sources_list` fields
+- **Response Format Validation**: All LLM calls use `response_format` parameter for type-safe outputs
+
+#### Flow Decorators & Orchestration
+- **`@persist()`**: Enables flow state persistence across sessions
+- **`@start()`**: Marks the entry point method (`starting_flow`)
+- **`@router()`**: Creates conditional routing based on LLM decisions
+- **`@listen()`**: Defines event-driven handlers for "research" and "conversation" intents
+
+#### Conversation Management
+- **Message History**: Persistent tracking using `List[Message]` with role, content, and timestamp
+- **Context Awareness**: All LLM prompts include conversation history for context-aware responses
+- **State Management**: Centralized state handling through `FlowState` class
+
+#### LLM Configuration
+- **Router LLM**: GPT-4.1 mini with temperature=0.1 for consistent routing decisions
+- **Conversation LLM**: GPT-4.1 mini with temperature=0.7 for natural, varied responses
+- **Research Agent**: Specialized agent with verbose=True for detailed research execution
+
+#### Research Output Requirements
+- **Inline Citations**: Every fact must be followed by source URL in parentheses format: `(URL)`
+- **Comprehensive Summaries**: Organized by topics/themes with cohesive narrative structure
+- **Source Documentation**: Complete source list with URL, title, and relevant content
 
 ## Installation & Setup
 
@@ -142,6 +191,26 @@ Starting from a fresh CrewAI flow, here's how to adapt it for this research syst
 - **`src/crewai_flow_workshop1/tools/deep_research_paper.py`**: Research tool implementation
 - **`pyproject.toml`**: Project configuration and dependencies
 
+### Core Dependencies & Imports
+
+The main.py implementation relies on these key imports:
+
+```python
+from crewai.flow import Flow, listen, start, router, persist
+from pydantic import BaseModel, Field
+from typing import Literal, List, Optional
+from datetime import datetime
+from crewai import LLM, Agent
+import json
+```
+
+#### Key Features Used:
+- **CrewAI Flow**: `Flow`, `@listen`, `@start`, `@router`, `@persist` decorators
+- **Pydantic Models**: Type-safe data structures with `BaseModel` and `Field`
+- **Type Hints**: `Literal`, `List`, `Optional` for strict typing
+- **LLM Integration**: Direct `LLM` class usage with structured responses
+- **Agent Creation**: Dynamic agent creation with specialized roles and tools
+
 ## Running the Project
 
 Execute the flow from the project root:
@@ -151,10 +220,19 @@ crewai run
 ```
 
 The system will:
-1. Start with a default research query about AI trends
-2. Route the message through intent classification
-3. Conduct research or provide conversation response
-4. Maintain message history for context
+1. Start with the default message: "help me researching on the latest trends in ai"
+2. Add the user message to conversation history with timestamp
+3. Route the message through GPT-4.1 mini intent classification
+4. Either conduct deep research (with academic database search) or provide conversational response
+5. Maintain persistent message history for context across interactions
+
+### Utility Functions
+
+The main.py file also includes utility functions:
+
+- **`kickoff()`**: Initializes and runs the `DeepResearchFlow` with tracing enabled
+- **`plot()`**: Generates a visual representation of the flow structure  
+- **Direct execution**: Running `python main.py` calls `kickoff()` for immediate flow execution
 
 ## Example Usage
 

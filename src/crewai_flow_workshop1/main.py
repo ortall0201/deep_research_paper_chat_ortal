@@ -57,7 +57,9 @@ class DeepResearchFlow(Flow[FlowState]):
         if self.state.user_message:
             self.add_message("user", self.state.user_message)
 
-        print("history", self.state.message_history)
+        return self.state.user_message
+
+
 
     @router(starting_flow)
     def routing_intent(self):
