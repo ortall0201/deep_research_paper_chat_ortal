@@ -11,9 +11,22 @@ class DeepResearchPaperInput(BaseModel):
     """Input schema for DeepResearchPaper tool."""
 
     query: str = Field(
-        ...,
+        default="",
         description="Research query to search for academic papers (e.g., 'machine learning transformers', 'agentic ai systems')",
     )
+    
+    @classmethod
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+    
+    def __init__(self, **data):
+        # Handle case where agent passes description instead of query
+        if 'description' in data and 'query' not in data:
+            data['query'] = data.pop('description')
+        elif not data.get('query') and len(data) == 1:
+            # If only one field is passed, use it as query
+            data['query'] = list(data.values())[0]
+        super().__init__(**data)
 
 
 class DeepResearchPaper(BaseTool):

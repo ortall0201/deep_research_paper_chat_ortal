@@ -59,8 +59,7 @@ class DeepResearchFlow(Flow[FlowState]):
             try:
                 self.state.user_message = input("Enter your message: ")
             except EOFError:
-                self.state.user_message = "help me researching on the latest trends in ai"
-                print("Using default message: help me researching on the latest trends in ai")
+                raise ValueError("No user message provided. Please run with: python src/crewai_flow_workshop1/main.py 'your message here'")
         
         # Add the user message to history
         if self.state.user_message:
@@ -231,9 +230,12 @@ class DeepResearchFlow(Flow[FlowState]):
         return self.state.model_dump()
 
 
-def kickoff():
+def kickoff(message=None):
     research_flow = DeepResearchFlow(tracing=True)
-    research_flow.kickoff()
+    if message:
+        research_flow.kickoff(inputs={"user_message": message})
+    else:
+        research_flow.kickoff()
 
 
 def plot():
@@ -242,4 +244,7 @@ def plot():
 
 
 if __name__ == "__main__":
-    kickoff()
+    message = None
+    if len(sys.argv) > 1:
+        message = " ".join(sys.argv[1:])
+    kickoff(message)
