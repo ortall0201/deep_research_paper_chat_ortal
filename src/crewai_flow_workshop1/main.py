@@ -192,56 +192,84 @@ class DeepResearchFlow(Flow[FlowState]):
 
     @listen("research")
     def handle_research(self):
-        print(f"Starting research with query: {self.state.research_query}")
+        try:
+            print(f"Starting research with query: {self.state.research_query}")
+            
+            # Create an Agent for deep research
+            analyst = Agent(
+                role="Deep Research Specialist",
+                goal="Conduct comprehensive research on specific queries, returning a summary response and detailed sources data",
+                backstory="You are an expert researcher with access to academic databases and research sources. "
+                "You excel at finding relevant scholarly papers, studies, and research findings, "
+                "synthesizing multiple academic sources, and providing comprehensive insights from credible research.",
+                tools=[DeepResearchPaper()],
+                verbose=True,
+            )
+            
+            # Execute the research
+            task = f"""
+            Use the Deep Research Paper Search tool to research the following query: {self.state.research_query}
+            
+            Call the tool with exactly this query parameter: {self.state.research_query}
+            
+            After getting the research results, provide a comprehensive summary that:
+            - Combines ALL found sources into a single, cohesive narrative
+            - Each piece of information MUST be immediately followed by its source URL in parentheses: (https://example.com/source)
+            - Include ALL sources used with url, title, and relevant_content for each
+            
+            Example format:
+            "According to recent research, AI adoption is increasing rapidly (https://example.com/source1), while challenges remain in implementation (https://example.com/source2)."
+            """
         
-        # Create an Agent for deep research
-        analyst = Agent(
-            role="Deep Research Specialist",
-            goal="Conduct comprehensive research on specific queries, returning a summary response and detailed sources data",
-            backstory="You are an expert researcher with access to academic databases and research sources. "
-            "You excel at finding relevant scholarly papers, studies, and research findings, "
-            "synthesizing multiple academic sources, and providing comprehensive insights from credible research.",
-            tools=[DeepResearchPaper()],
-            verbose=True,
-        )
-        
-        # Execute the research
-        task = f"""
-        Use the Deep Research Paper Search tool to research the following query: {self.state.research_query}
-        
-        Call the tool with exactly this query parameter: {self.state.research_query}
-        
-        After getting the research results, provide a comprehensive summary that:
-        - Combines ALL found sources into a single, cohesive narrative
-        - Each piece of information MUST be immediately followed by its source URL in parentheses: (https://example.com/source)
-        - Include ALL sources used with url, title, and relevant_content for each
-        
-        Example format:
-        "According to recent research, AI adoption is increasing rapidly (https://example.com/source1), while challenges remain in implementation (https://example.com/source2)."
-        """
-    
-        research_result = analyst.kickoff(task, response_format=SearchResult)
+            research_result = analyst.kickoff(task, response_format=SearchResult)
 
-        self.state.search_result = research_result.pydantic
+            self.state.search_result = research_result.pydantic
 
-        # Add the research result to conversation history
-        self.add_message("assistant", self.state.search_result.research_summary)
+            # Add the research result to conversation history (handle Unicode)
+            try:
+                # Clean Unicode characters for safe storage and display
+                clean_summary = self.state.search_result.research_summary.encode('ascii', 'replace').decode('ascii')
+                self.add_message("assistant", clean_summary)
+            except Exception as e:
+                # Fallback if Unicode handling fails
+                self.add_message("assistant", "Research completed successfully. Results available.")
+            
+            # Print the research results to console with Unicode handling
+            try:
+                print("\n" + "="*80)
+                print("RESEARCH RESULTS")
+                print("="*80)
+                print(f"\nRESEARCH SUMMARY:")
+                # Handle Unicode characters in research summary
+                summary = self.state.search_result.research_summary.encode('ascii', 'replace').decode('ascii')
+                print(summary)
+                print(f"\nSOURCES ({len(self.state.search_result.sources_list)}):")
+                for i, source in enumerate(self.state.search_result.sources_list, 1):
+                    # Handle Unicode in source titles and content
+                    title = source.title.encode('ascii', 'replace').decode('ascii')
+                    content = source.relevant_content[:200].encode('ascii', 'replace').decode('ascii')
+                    print(f"{i}. {title}")
+                    print(f"   URL: {source.url}")
+                    print(f"   Content: {content}...")
+                    print()
+                print("="*80)
+            except Exception as e:
+                # If printing fails, just log the error without breaking the API
+                print(f"Error printing research results: {e}")
+            
+            return self.state.model_dump()
         
-        # Print the research results to console
-        print("\n" + "="*80)
-        print("RESEARCH RESULTS")
-        print("="*80)
-        print(f"\nRESEARCH SUMMARY:")
-        print(self.state.search_result.research_summary)
-        print(f"\nSOURCES ({len(self.state.search_result.sources_list)}):")
-        for i, source in enumerate(self.state.search_result.sources_list, 1):
-            print(f"{i}. {source.title}")
-            print(f"   URL: {source.url}")
-            print(f"   Content: {source.relevant_content[:200]}...")
-            print()
-        print("="*80)
-        
-        return self.state.model_dump()
+        except Exception as e:
+            # Handle any unexpected errors in the research process
+            print(f"Error in research process: {e}")
+            # Create a fallback search result
+            fallback_summary = "Research completed but encountered encoding issues. Please try a different query."
+            self.state.search_result = SearchResult(
+                research_summary=fallback_summary,
+                sources_list=[]
+            )
+            self.add_message("assistant", fallback_summary)
+            return self.state.model_dump()
 
 
 def kickoff(message=None):

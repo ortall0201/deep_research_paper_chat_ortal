@@ -9,12 +9,16 @@ dependencies = [
     "crewai[tools]>=0.175.0,<1.0.0",
     "firecrawl>=4.3.3",
     "requests>=2.32.5",
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "python-multipart>=0.0.6",
 ]
 
 [project.scripts]
 kickoff = "crewai_flow_workshop1.main:kickoff"
 run_crew = "crewai_flow_workshop1.main:kickoff"
 plot = "crewai_flow_workshop1.main:plot"
+api_server = "crewai_flow_workshop1.api_server:app"
 
 [build-system]
 requires = ["hatchling"]

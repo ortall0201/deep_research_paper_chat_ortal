@@ -1,0 +1,289 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Intelligent Research Assistant Design System
+All colors MUST be HSL for proper theming
+*/
+
+@layer base {
+  :root {
+    /* Core System Colors */
+    --background: 248 250% 99%;
+    --foreground: 224 33% 15%;
+    
+    /* Card & Surface Colors */
+    --card: 0 0% 100%;
+    --card-foreground: 224 33% 15%;
+    
+    /* Interactive Elements */
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 33% 15%;
+    
+    /* Brand Colors - Professional Intelligence Theme */
+    --primary: 234 89% 74%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 234 89% 68%;
+    
+    /* Research Mode Colors */
+    --research: 142 76% 36%;
+    --research-foreground: 0 0% 100%;
+    --research-accent: 142 76% 94%;
+    --research-border: 142 76% 88%;
+    
+    /* Conversation Mode Colors */
+    --conversation: 234 89% 74%;
+    --conversation-foreground: 0 0% 100%;
+    --conversation-accent: 234 89% 96%;
+    --conversation-border: 234 89% 90%;
+    
+    /* Secondary System Colors */
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 224 33% 15%;
+    
+    /* Muted Elements */
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+    
+    /* Accent Colors */
+    --accent: 240 5% 96%;
+    --accent-foreground: 224 33% 15%;
+    
+    /* Status Colors */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    
+    /* Border & Input */
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 234 89% 74%;
+    
+    /* Chat Interface Colors */
+    --chat-user: 234 89% 74%;
+    --chat-user-foreground: 0 0% 100%;
+    --chat-assistant: 0 0% 100%;
+    --chat-assistant-foreground: 224 33% 15%;
+    --chat-background: 248 250% 99%;
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(234 89% 74%), hsl(234 89% 68%));
+    --gradient-research: linear-gradient(135deg, hsl(142 76% 36%), hsl(142 76% 42%));
+    --gradient-hero: linear-gradient(135deg, hsl(234 89% 74%) 0%, hsl(142 76% 36%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(248 250% 99%) 0%, hsl(240 5% 98%) 100%);
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(240 4% 46% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(240 4% 46% / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(240 4% 46% / 0.1);
+    --shadow-research: 0 4px 20px hsl(142 76% 36% / 0.15);
+    --shadow-conversation: 0 4px 20px hsl(234 89% 74% / 0.15);
+    
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --animation-pulse: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    
+    /* Spacing & Layout */
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    /* Core System Colors - Dark Mode */
+    --background: 224 33% 8%;
+    --foreground: 248 250% 99%;
+    
+    /* Card & Surface Colors */
+    --card: 224 33% 12%;
+    --card-foreground: 248 250% 99%;
+    
+    /* Interactive Elements */
+    --popover: 224 33% 12%;
+    --popover-foreground: 248 250% 99%;
+    
+    /* Brand Colors - Dark Mode */
+    --primary: 234 89% 74%;
+    --primary-foreground: 224 33% 8%;
+    --primary-hover: 234 89% 78%;
+    
+    /* Research Mode Colors - Dark */
+    --research: 142 76% 46%;
+    --research-foreground: 0 0% 100%;
+    --research-accent: 142 76% 15%;
+    --research-border: 142 76% 20%;
+    
+    /* Conversation Mode Colors - Dark */
+    --conversation: 234 89% 74%;
+    --conversation-foreground: 224 33% 8%;
+    --conversation-accent: 234 89% 15%;
+    --conversation-border: 234 89% 20%;
+    
+    /* Secondary System Colors */
+    --secondary: 224 33% 16%;
+    --secondary-foreground: 248 250% 99%;
+    
+    /* Muted Elements */
+    --muted: 224 33% 16%;
+    --muted-foreground: 240 4% 65%;
+    
+    /* Accent Colors */
+    --accent: 224 33% 16%;
+    --accent-foreground: 248 250% 99%;
+    
+    /* Status Colors */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --success: 142 76% 46%;
+    --success-foreground: 0 0% 100%;
+    
+    /* Border & Input */
+    --border: 224 33% 20%;
+    --input: 224 33% 20%;
+    --ring: 234 89% 74%;
+    
+    /* Chat Interface Colors - Dark */
+    --chat-user: 234 89% 74%;
+    --chat-user-foreground: 224 33% 8%;
+    --chat-assistant: 224 33% 12%;
+    --chat-assistant-foreground: 248 250% 99%;
+    --chat-background: 224 33% 8%;
+    
+    /* Gradients - Dark Mode */
+    --gradient-primary: linear-gradient(135deg, hsl(234 89% 74%), hsl(234 89% 78%));
+    --gradient-research: linear-gradient(135deg, hsl(142 76% 46%), hsl(142 76% 52%));
+    --gradient-hero: linear-gradient(135deg, hsl(234 89% 74%) 0%, hsl(142 76% 46%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(224 33% 8%) 0%, hsl(224 33% 12%) 100%);
+    
+    /* Shadows - Dark Mode */
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.2);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.3);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.4);
+    --shadow-research: 0 4px 20px hsl(142 76% 46% / 0.3);
+    --shadow-conversation: 0 4px 20px hsl(234 89% 74% / 0.3);
+
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  /* Chat Interface Components */
+  .chat-bubble-user {
+    @apply bg-chat-user text-chat-user-foreground;
+    @apply rounded-2xl rounded-br-md px-4 py-3;
+    @apply shadow-conversation;
+  }
+  
+  .chat-bubble-assistant {
+    @apply bg-chat-assistant text-chat-assistant-foreground;
+    @apply rounded-2xl rounded-bl-md px-4 py-3;
+    @apply shadow-sm border border-border;
+  }
+  
+  .research-indicator {
+    @apply bg-research text-research-foreground;
+    @apply text-xs px-2 py-1 rounded-full font-medium;
+    @apply shadow-research;
+  }
+  
+  .conversation-indicator {
+    @apply bg-conversation text-conversation-foreground;
+    @apply text-xs px-2 py-1 rounded-full font-medium;
+    @apply shadow-conversation;
+  }
+  
+  .research-citation {
+    @apply text-research underline underline-offset-2;
+    @apply hover:text-research/80;
+    @apply transition-colors duration-200;
+  }
+  
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary via-research to-conversation;
+    @apply bg-clip-text text-transparent;
+  }
+  
+  .glass-effect {
+    @apply backdrop-blur-sm bg-white/80 dark:bg-black/20;
+    @apply border border-white/20 dark:border-white/10;
+  }
+  
+  .typing-animation {
+    animation: var(--animation-pulse);
+  }
+  
+  /* Smooth transitions for all interactive elements */
+  .smooth-transition {
+    transition: var(--transition-smooth);
+  }
+  
+  .fast-transition {
+    transition: var(--transition-fast);
+  }
+}
+
+@layer utilities {
+  /* Shadow utilities */
+  .shadow-research {
+    box-shadow: var(--shadow-research);
+  }
+  
+  .shadow-conversation {
+    box-shadow: var(--shadow-conversation);
+  }
+  
+  /* Gradient utilities */
+  .bg-gradient-primary {
+    background: var(--gradient-primary);
+  }
+  
+  .bg-gradient-research {
+    background: var(--gradient-research);
+  }
+  
+  .bg-gradient-hero {
+    background: var(--gradient-hero);
+  }
+  
+  .bg-gradient-subtle {
+    background: var(--gradient-subtle);
+  }
+}

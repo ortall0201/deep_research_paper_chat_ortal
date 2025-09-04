@@ -271,6 +271,103 @@ System: → Routes to research with context → Returns relevant bias studies
 - Modify the default query in `FlowState` for different starting points
 - Adjust research limits and timeouts in the tool configuration
 
+## Web Application & Deployment
+
+This project includes a complete web application with React frontend and FastAPI backend.
+
+### Web Interface
+
+The system includes a modern web interface built with:
+- **Frontend**: React + TypeScript + Tailwind CSS + Vite
+- **Backend**: FastAPI with CrewAI integration
+- **Features**: Real-time research, chat interface, source display
+
+### Local Development
+
+#### Backend API Server
+```bash
+# Start the API server
+python start_api.py
+# API available at: http://localhost:8000
+# Documentation: http://localhost:8000/docs
+```
+
+#### Frontend Development Server
+```bash
+cd frontend/synapse-research
+npm install
+npm run dev
+# Frontend available at: http://localhost:8080
+```
+
+### Docker Deployment
+
+#### Quick Start with Docker
+```bash
+# Build and run with Docker Compose
+docker-compose up --build
+
+# Or run individual containers
+docker build -t research-app .
+docker run -p 8000:8000 -p 3000:3000 --env-file .env.production research-app
+```
+
+#### Production Deployment
+
+1. **Set up environment variables**:
+```bash
+cp .env.production.example .env.production
+# Edit .env.production with your API keys
+```
+
+2. **Deploy with Docker**:
+```bash
+docker-compose up -d
+```
+
+The application will be available at:
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:8000
+- **Health Check**: http://localhost:8000/health
+
+### GitHub Actions Deployment
+
+This repository includes automated deployment with GitHub Actions:
+
+1. **Automatic Testing**: Tests both Python backend and React frontend
+2. **Docker Build**: Builds and pushes container images to GitHub Container Registry
+3. **Staging Deployment**: Automatically deploys to staging on main branch pushes
+4. **Production Deployment**: Manual approval required for production deployment
+
+#### Setting up GitHub Deployment
+
+1. **Repository Secrets**: Add these secrets to your GitHub repository:
+   - `OPENAI_API_KEY`: Your OpenAI API key
+   - `FIRECRAWL_API_KEY`: Your Firecrawl API key
+
+2. **Container Registry**: The workflow uses GitHub Container Registry (ghcr.io) automatically
+
+3. **Environments**: Configure `staging` and `production` environments in GitHub for deployment approval
+
+### API Endpoints
+
+The FastAPI backend provides these endpoints:
+
+- `POST /api/chat` - Main chat interface with intelligent routing
+- `POST /api/classify-intent` - Intent classification endpoint  
+- `POST /api/research` - Direct research endpoint
+- `POST /api/conversation` - Conversation-only endpoint
+- `GET /health` - Health check endpoint
+
+### Architecture
+
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│  React Frontend │ ─→ │  FastAPI Server  │ ─→ │  CrewAI Flow   │
+│  (Port 3000)    │    │  (Port 8000)     │    │  + Research     │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+```
+
 ## Support & Resources
 
 For support, questions, or feedback:
