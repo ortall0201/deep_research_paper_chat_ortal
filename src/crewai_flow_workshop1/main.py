@@ -227,6 +227,20 @@ class DeepResearchFlow(Flow[FlowState]):
         # Add the research result to conversation history
         self.add_message("assistant", self.state.search_result.research_summary)
         
+        # Print the research results to console
+        print("\n" + "="*80)
+        print("RESEARCH RESULTS")
+        print("="*80)
+        print(f"\nRESEARCH SUMMARY:")
+        print(self.state.search_result.research_summary)
+        print(f"\nSOURCES ({len(self.state.search_result.sources_list)}):")
+        for i, source in enumerate(self.state.search_result.sources_list, 1):
+            print(f"{i}. {source.title}")
+            print(f"   URL: {source.url}")
+            print(f"   Content: {source.relevant_content[:200]}...")
+            print()
+        print("="*80)
+        
         return self.state.model_dump()
 
 
