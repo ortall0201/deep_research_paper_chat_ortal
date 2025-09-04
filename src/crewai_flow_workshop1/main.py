@@ -6,6 +6,7 @@ from typing import Literal, List, Optional
 from datetime import datetime
 from crewai import LLM, Agent
 import json
+import sys
 
 from crewai_flow_workshop1.tools.deep_research_paper import DeepResearchPaper # Using the local tool
 # from deep_research_paper_tool.tool import DeepResearchPaper # Importing tool from crewai tool repository
@@ -36,7 +37,7 @@ class SearchResult(BaseModel):
     )
 
 class FlowState(BaseModel):
-    user_message: str = "help me researching on the latest trends in ai"
+    user_message: str = ""
     message_history: List[Message] = []
     research_query: Optional[str] = None
     user_intent: Optional[Literal["research", "conversation"]] = None
@@ -53,6 +54,14 @@ class DeepResearchFlow(Flow[FlowState]):
 
     @start()
     def starting_flow(self):
+        # If no user message is set, prompt for input
+        if not self.state.user_message:
+            try:
+                self.state.user_message = input("Enter your message: ")
+            except EOFError:
+                self.state.user_message = "help me researching on the latest trends in ai"
+                print("Using default message: help me researching on the latest trends in ai")
+        
         # Add the user message to history
         if self.state.user_message:
             self.add_message("user", self.state.user_message)
