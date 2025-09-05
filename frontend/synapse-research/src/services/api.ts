@@ -1,7 +1,8 @@
 import { Message, IntentClassification, ResearchResult } from '@/types/research';
 
-// Use environment variable or fallback to localhost for development
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+// Use environment variable, detect production, or fallback to localhost for development
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
+  (window.location.hostname !== 'localhost' ? window.location.origin : 'http://localhost:8000');
 
 interface ChatRequest {
   message: string;
